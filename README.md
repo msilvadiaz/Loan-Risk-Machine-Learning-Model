@@ -1,6 +1,6 @@
 # Loan Risk Machine Learning Model
 
-## Project Overview
+### Project Overview
 
 This project analyzes LendingClub accepted loan data to understand borrower and loan characteristics associated with loan default risk. The main goal is to predict whether a loan will be **Fully Paid** or **Charged Off** using selected borrower, credit, and loan-related features.
 
@@ -11,7 +11,7 @@ The target variable is `loan_status`, which is converted into a binary classific
 
 Because charged-off loans represent the minority class, this is an imbalanced binary classification problem. For that reason, the project focuses on metrics such as precision, recall, F1-score, average precision, and threshold optimization instead of relying only on accuracy.
 
-## Dataset
+## Dataset & Processing
 
 The project uses a LendingClub accepted-loans sample dataset from Kaggle.
 
@@ -42,10 +42,9 @@ df_sample.to_csv("accepted_loans_sample_500k.csv", index=False)
 
 df_sample["default"].value_counts(normalize=True)
 ```
+The code snippet takes the original LendingClub dataset, removes loans without final outcomes, creates a default target column, then creates a smaller 500,000-row sample while preserving the same default/non-default balance. Only loans with final outcomes of `Fully Paid` or `Charged Off` are used in the analysis.
 
-The working dataset contains 500,000 sampled loan records. Only loans with final outcomes of `Fully Paid` or `Charged Off` are used in the analysis.
-
-## Selected Features
+### Selected Features
 
 The notebook uses a selected group of features that are reasonable for predicting loan risk and avoiding obvious data leakage.
 
@@ -82,9 +81,11 @@ The selected features include:
   - `acc_open_past_24mths`
   - `bc_util`
 
-Some features, such as `int_rate` and `grade`, are useful for descriptive analysis but are removed before modeling because they may contain LendingClub's own risk assessment and could make the model less independent.
+An additional risk-related feature `loan_to_income` is also feature engineered.
 
-## Data Cleaning
+Some features like `int_rate` and `grade`, are useful for descriptive analysis but are removed before modeling because they may contain LendingClub's own risk assessment and could make the model less independent.
+
+### Data Cleaning
 
 The notebook performs several cleaning steps before modeling.
 
@@ -94,7 +95,7 @@ The main cleaning steps include:
   - `Fully Paid`
   - `Charged Off`
 
-- Encoding the target variable:
+- One-Hot Encoding the target variable:
   - Fully Paid = `0`
   - Charged Off = `1`
 
@@ -111,66 +112,54 @@ The main cleaning steps include:
 
 - Replacing infinite values with missing values where needed.
 
-## Feature Engineering
-
-The notebook creates an additional risk-related feature.
-
-### `loan_to_income`
-
-This feature divides the loan amount by the borrower's annual income:
-
-```python
-loan_to_income = loan_amnt / annual_inc
-```
-
-This helps capture how large the loan is relative to the borrower's income. A higher value may indicate higher financial pressure and higher default risk.
-
-## Descriptive Analysis
-
+## Exploratory Data Analysis
 The notebook includes several charts and summary tables to understand the data before modeling.
 
-The descriptive analysis includes:
+### Status Count
 
-- Target distribution between fully paid and charged-off loans
-- Loan amount distribution by loan status
-- Interest rate distribution by loan status
-- Default rate by loan grade
-- FICO score distribution by loan status
-- Default rate by loan purpose
-- Correlation heatmap of numeric features
-
-Key insights include:
+| Loan Status | Count | Percentage |
+|---|---:|---:|
+| Fully Paid | 400,187 | 80.04% |
+| Charged Off | 99,813 | 19.96% |
 
 - Charged-off loans represent about 20% of the dataset.
-- Default risk increases as loan grade worsens.
-- Small business loans show one of the highest default rates by purpose.
-- Lower credit scores are more common among charged-off loans.
-- Some financial and credit-related features show useful relationships with default risk.
+
+### Interest rate & FICO Distributions
+
+<img width="1359" height="419" alt="image" src="https://github.com/user-attachments/assets/14ef3475-da8d-4feb-afdd-31a286bd1a7d" />
+
+- FICO Score Distribution: Charged-off loans are more concentrated at lower FICO scores, suggesting that FICO factors like lower credit scores are associated with higher default risk.
+- Interest Rate Distribution: Charged-off loans appear more common at higher interest rates, showcasing that higher-risk loans were generally assigned higher borrowing costs.
+
+### Default Rate by Loan Grade
+
+<img width="690" height="490" alt="image" src="https://github.com/user-attachments/assets/6f252d33-9f32-42e8-bf28-772038c7c394" />
+
+- Default risk increases clearly as loan grade worsens from A to G, showing that lower-quality grades are strongly associated with higher charge-off rates.
+
+### Default rate by Loan Purpose
+
+<img width="670" height="400" alt="image" src="https://github.com/user-attachments/assets/58d6b120-8e5e-4613-b235-4c3c786a487b" />
+
+- Default risk varies by loan purpose, with small business loans having the highest charge-off rate and educational, wedding, and car loans having some of the lowest rates.
+
+### Correlation Heatmap of Numeric Features
+
+<img width="1311" height="989" alt="image" src="https://github.com/user-attachments/assets/9e688685-7498-430e-b4ce-b7de1f66b526" />
+
+- The heatmap shows relationships between numeric features, with stronger correlations appearing between related variables such as ```loan_amnt``` and ```installment```, while most features have only weak-to-moderate relationships with ```loan_status```.
 
 ## Predictive Modeling Approach
 
-The predictive analysis follows a structured machine learning workflow.
+The predictive analysis follows a structured workflow:
 
-The main steps are:
-
-1. Split the data into training and test sets.
-2. Apply preprocessing using training data only.
-3. Handle outliers using percentile capping.
-4. Impute missing values.
-5. One-hot encode categorical variables.
-6. Tune selected machine learning models using cross-validation.
-7. Handle class imbalance.
-8. Calibrate probabilities for selected models.
-9. Optimize the classification threshold.
-10. Evaluate final performance on the test set.
-
-## Train/Test Split
+### Train/Test Split
 
 The data is split into training and test sets using an 80/20 split.
 
 Stratification is used so that the proportion of fully paid and charged-off loans remains similar in both the training and test sets.
 
-## Train-Only Preprocessing
+### Train-Only Preprocessing
 
 To avoid data leakage, preprocessing is fitted only on the training set and then applied to the test set.
 
@@ -216,13 +205,13 @@ Each model is tuned using 3-fold stratified cross-validation.
 
 The tuning process optimizes F1-score for the charged-off class because this metric balances precision and recall for the minority class.
 
-## Probability Calibration
+### Probability Calibration
 
 XGBoost and Random Forest probabilities are calibrated using isotonic calibration.
 
 This is done because tree-based models can produce probability estimates that are not well calibrated. Since the project uses threshold optimization, better probability calibration helps make the selected threshold more meaningful.
 
-## Threshold Optimization
+### Threshold Optimization
 
 Instead of using the default threshold of `0.50`, the notebook tests thresholds from `0.10` to `0.90`.
 
@@ -230,7 +219,7 @@ For each model, the threshold that gives the best F1-score for charged-off loans
 
 This is important because in an imbalanced classification problem, the default threshold may not produce the best balance between precision and recall.
 
-## Model Evaluation
+### Model Evaluation
 
 The models are compared using the following metrics:
 
@@ -241,48 +230,24 @@ The models are compared using the following metrics:
 - Average precision
 - Brier score
 
-The best model is selected based primarily on F1-score for the charged-off class.
-
-## Final Model
+## Final Model Report
 
 The best-performing model is tuned Logistic Regression.
 
-The final selected threshold is approximately:
+| Model | Threshold | Accuracy | Precision Defaults | Recall Defaults | F1 Defaults | Average Precision | Brier Score |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Tuned Logistic Regression | 0.54 | 0.6898 | 0.3423 | 0.6011 | 0.4362 | 0.3839 | 0.2150 |
+| Tuned XGBoost  | 0.23 | 0.6871 | 0.3392 | 0.5981 | 0.4329 | 0.3824 | 0.1440 |
+| Tuned Random Forest  | 0.21 | 0.6581 | 0.3235 | 0.6532 | 0.4327 | 0.3803 | 0.1442 |
 
-```text
-0.54
-```
-
-The final model performance is:
 
 ## Confusion Matrix Interpretation
-
-The final confusion matrix shows:
-
-This means:
+Using Logistic Regression (highest F1) for a confusion matrix provides the following insights:
 
 - The model correctly identifies 11,999 charged-off loans.
 - The model misses 7,964 charged-off loans.
 - The model incorrectly flags 23,051 fully paid loans as charged-off.
 - The model catches about 60% of actual charged-off loans.
-
-## Business Interpretation
-
-The final model is useful as a risk-screening tool, but it should not be used as an automatic loan rejection system.
-
-The model has moderate recall, meaning it can identify a meaningful portion of charged-off loans. However, the precision is relatively low, meaning many loans flagged as risky would still be fully paid.
-
-A practical use case would be to use the model as an early-warning system or as a decision-support tool for further manual review.
-
-## Key Takeaways
-
-- Loan default prediction is challenging because charged-off loans are the minority class.
-- Accuracy alone is not a reliable metric for this project.
-- F1-score, recall, precision, and average precision provide better insight into model performance.
-- Train-only preprocessing helps prevent data leakage.
-- Threshold optimization improves the usefulness of the final model.
-- Logistic Regression performed slightly better than XGBoost and Random Forest in this version of the project.
-- The final model is useful for identifying higher-risk loans but should be used to support, not replace, human decision-making.
 
 ## Conclusion
 
