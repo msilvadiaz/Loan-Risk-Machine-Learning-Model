@@ -236,9 +236,9 @@ The best-performing model is tuned Logistic Regression.
 
 | Model | Threshold | Accuracy | Precision Defaults | Recall Defaults | F1 Defaults | Average Precision | Brier Score |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| Tuned Logistic Regression | 0.54 | 0.6898 | 0.3423 | 0.6011 | 0.4362 | 0.3839 | 0.2150 |
-| Tuned XGBoost  | 0.23 | 0.6871 | 0.3392 | 0.5981 | 0.4329 | 0.3824 | 0.1440 |
-| Tuned Random Forest  | 0.21 | 0.6581 | 0.3235 | 0.6532 | 0.4327 | 0.3803 | 0.1442 |
+| Logistic Regression | 0.54 | 0.6898 | 0.3423 | 0.6011 | 0.4362 | 0.3839 | 0.2150 |
+| XGBoost  | 0.23 | 0.6871 | 0.3392 | 0.5981 | 0.4329 | 0.3824 | 0.1440 |
+| Random Forest  | 0.21 | 0.6581 | 0.3235 | 0.6532 | 0.4327 | 0.3803 | 0.1442 |
 
 
 ## Confusion Matrix Interpretation
